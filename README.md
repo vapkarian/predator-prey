@@ -5,10 +5,12 @@ Program creates table with size M x N (parameters **M** and **N**) divided into 
 occupied by predator or occupied by victim.
 
 Cell-victim:
+
 1. Victim appears after some cycles (parameter **VICTIM_RECYCLE**) in a random empty cell.
 2. Victim does not change its position throughout the life.
 
 Cell-predator:
+
 1. Predator can move to an adjacent cell by one cycle.
 2. Objective of the predator is eating victims, so if predator is near the victim, the predator can swallow victim by
 moving into the cell. During one cycle predator can eat only one victim. If there are several victims near the
@@ -20,6 +22,7 @@ predator will be appear in the cell where parent was before moving. Number of cy
 the zero.
 
 Additional features:
+
 1. You can see graph of count of victims and predators depending on time (if you haven't matplotlib, statistics will be
 outputted in text table format).
 2. You can intervene in the process and remove predators and victims by clicking left mouse button.
