@@ -28,18 +28,19 @@ class Window(Tkinter.Tk):
             self.timer_update()
 
     def click(self, event):
+        try:
+            rectangle = event.widget.find_overlapping(event.x, event.y, event.x, event.y)[0]
+        except IndexError:
+            return
         point = (event.x / CELL_SIZE, event.y / CELL_SIZE)
-
-        for predator in self.world.predators.itervalues():
-            if predator.position == point:
-                self.world.kill_predator(predator)
-                self.create_cell(point, EMPTY_COLOR)
-                return
-        for victim in self.world.victims.itervalues():
-            if victim.position == point:
-                self.world.kill_victim(victim)
-                self.create_cell(point, EMPTY_COLOR)
-                return
+        color = event.widget.itemcget(rectangle, 'fill')
+        if color == PREDATOR_COLOR:
+            predator = self.world.predators[point]
+            self.world.kill_predator(predator)
+        elif color == VICTIM_COLOR:
+            victim = self.world.victims[point]
+            self.world.kill_victim(victim)
+        event.widget.delete(rectangle)
 
     def create_cell(self, point, color):
         x, y = point
