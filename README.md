@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/vapkarian/predator-prey.png?label=ready&title=Ready)](https://waffle.io/vapkarian/predator-prey)
 Implementation of math game "Predator-prey"
 =============
 
