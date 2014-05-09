@@ -3,7 +3,7 @@ import core
 
 CELL_SIZE = 10
 PAUSE_KEY = '<space>'
-EMPTY_COLOR = 'white'
+EMPTY_COLOR = 'black'
 PREDATOR_COLOR = 'red'
 VICTIM_COLOR = 'green'
 TIMER = 100
@@ -30,14 +30,14 @@ class Window(Tkinter.Tk):
     def click(self, event):
         point = (event.x / CELL_SIZE, event.y / CELL_SIZE)
 
-        for predator in self.world.predators[:]:
+        for predator in self.world.predators.itervalues():
             if predator.position == point:
-                self.world.predators.remove(predator)
+                self.world.kill_predator(predator)
                 self.create_cell(point, EMPTY_COLOR)
                 return
-        for victim in self.world.victims[:]:
+        for victim in self.world.victims.itervalues():
             if victim.position == point:
-                self.world.victims.remove(victim)
+                self.world.kill_victim(victim)
                 self.create_cell(point, EMPTY_COLOR)
                 return
 
@@ -51,10 +51,10 @@ class Window(Tkinter.Tk):
             return
         self.canvas.delete(Tkinter.ALL)
         self.world.cycle()
-        for victim in self.world.victims:
-            self.create_cell(victim.position, color=VICTIM_COLOR)
-        for predator in self.world.predators:
-            self.create_cell(predator.position, color=PREDATOR_COLOR)
+        for victim in self.world.victims.iterkeys():
+            self.create_cell(victim, color=VICTIM_COLOR)
+        for predator in self.world.predators.iterkeys():
+            self.create_cell(predator, color=PREDATOR_COLOR)
         if len(self.world.predators):
             self.after(TIMER, self.timer_update)
         else:
