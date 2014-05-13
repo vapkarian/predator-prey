@@ -1,10 +1,12 @@
 import random
 
-M = 80
+M = 50
 N = 50
 VICTIM_RECYCLE = 1
-PREDATOR_HUNGER_CYCLES = 200
+PREDATOR_HUNGER_CYCLES = 20
 PREDATOR_REPRODUCTION_CYCLES = 3
+distance = lambda predator, point: max(abs(predator.x - point[0]), abs(predator.y - point[1]))
+signum = lambda x: (x > 0) - (x < 0)
 
 
 class Victim(object):
@@ -36,7 +38,8 @@ class Predator(object):
         self.y = y
         self.hunger = 0
         self.bellyful = 0
-        self._behavior = None
+        self.behavior = None  # hunting | keeping | walking
+        self.target = None
 
     @property
     def position(self):
@@ -45,23 +48,6 @@ class Predator(object):
     @position.setter
     def position(self, value):
         self.x, self.y = value
-
-    @property
-    def behavior(self):
-        """
-        Behavior of moving tactic of predator. Possible options:
-            hunting: try to eat victim neighbour
-            keeping: try to move to empty cell
-            walking: random choice
-        :return: hunting | keeping | walking
-        :rtype: str
-        """
-        if self._behavior is None:
-            if self.hunger > (PREDATOR_HUNGER_CYCLES / 2):
-                self._behavior = 'hunting'
-            else:
-                self._behavior = random.choice(['hunting', 'walking', 'keeping'])
-        return self._behavior
 
 
 class World(object):
@@ -82,7 +68,7 @@ class World(object):
 
     def create_predator(self, x, y):
         """
-        Create new predator in cell with coordinate (x, y).
+        Creates new predator in cell with coordinate (x, y).
 
         :param x: coordinate x of world
         :type x: int
@@ -93,7 +79,7 @@ class World(object):
 
     def move_predator(self, predator):
         """
-        Selecting cells of moving depending on behavior of predator and neighbors.
+        Selects cells of moving depending on behavior of predator and neighbors.
 
         :param predator: predator that will be moved
         :type predator: Predator
@@ -104,11 +90,19 @@ class World(object):
         y_axis = range(max(predator.y - 1, 0), min(predator.y + 1, N - 1) + 1)
         neighbours = [(x, y) for x in x_axis for y in y_axis if predator.position != (x, y)]
         random.shuffle(neighbours)
+        if predator.target:
+            try:
+                neighbours.remove(predator.target)
+            except ValueError:
+                pass
+            else:
+                neighbours.insert(0, predator.target)
         food = False
-        behavior = predator.behavior
         point = predator.position
-        for point in neighbours:
+        behavior = predator.behavior
+        for point in neighbours[:]:
             if point in self.predators.iterkeys():
+                neighbours.remove(point)
                 continue
             elif point in self.victims.iterkeys():
                 if behavior in ('hunting', 'walking'):
@@ -118,13 +112,16 @@ class World(object):
             else:
                 if behavior in ('keeping', 'walking'):
                     break
+        else:
+            if neighbours:
+                point = neighbours[0]
         self.predators[point] = self.predators.pop(predator.position)
         predator.position = point
         return food
 
     def kill_predator(self, predator):
         """
-        Remove predator from predator population.
+        Removes predator from predator population.
 
         :param predator: predator that will be killed
         :type predator: Predator
@@ -133,7 +130,7 @@ class World(object):
 
     def create_victim(self):
         """
-        Create new victim in random empty cell.
+        Creates new victim in random empty cell.
         """
         while True:
             x = random.randint(0, M - 1)
@@ -156,7 +153,7 @@ class World(object):
 
     def kill_victim(self, victim):
         """
-        Remove victim from prey population.
+        Removes victim from prey population.
 
         :param victim: victim that will be killed
         :type victim: Victim
@@ -175,6 +172,23 @@ class World(object):
 
         for predator in self.predators.values()[:]:
             old_x, old_y = predator.position
+            predator.target = None
+            predator.behavior = 'walking'
+            if predator.hunger > (PREDATOR_HUNGER_CYCLES / 2):
+                predator.behavior = 'hunting'
+                targets = sorted(self.victims.keys(), key=lambda point: distance(predator, point))
+                if targets:
+                    nearest = targets[0]
+                    x = predator.x + signum(nearest[0] - predator.x)
+                    y = predator.y + signum(nearest[1] - predator.y)
+                    predator.target = (x, y)
+            else:
+                remaining_cycles = PREDATOR_HUNGER_CYCLES - predator.hunger
+                for victim in self.victims.iterkeys():
+                    if distance(predator, victim) < remaining_cycles:
+                        predator.behavior = 'keeping'
+                        break
+
             food = self.move_predator(predator)
             if food:
                 predator.hunger = 0
